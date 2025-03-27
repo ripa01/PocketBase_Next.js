@@ -1,8 +1,8 @@
 "use client"
 
-import type React from "react"
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -24,91 +24,64 @@ interface TaskDialogProps {
 }
 
 export function TaskDialog({ mode = "create", task, trigger }: TaskDialogProps) {
-  const [open, setOpen] = useState(false)
-  const [title, setTitle] = useState("")
-  const [completed, setCompleted] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { isSubmitting },
+  } = useForm<Task>({
+    defaultValues: { title: "", completed: false },
+  })
 
-  // Initialize form with task data when in update mode and dialog opens
+  const completed = watch("completed")
+
   useEffect(() => {
-    if (open && mode === "update" && task) {
-      setTitle(task.title)
-      setCompleted(task.completed)
-    } else if (open && mode === "create") {
-      // Reset form when opening in create mode
-      setTitle("")
-      setCompleted(false)
+    if (task && mode === "update") {
+      reset(task)
+    } else {
+      reset()
     }
-  }, [open, mode, task])
+  }, [task, mode, reset])
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setIsSubmitting(true)
-
+  const onSubmit = async (data: Task) => {
     try {
-      if (mode === "create") {
-        await createTask({ title, completed })
-        setTitle("")
-        setCompleted(false)
-      } else if (mode === "update" && task) {
-        await updateTask({ id: task.id, title, completed })
-      }
-
-      setOpen(false)
+      await (mode === "create"
+        ? createTask(data)
+        : updateTask({ ...data }))
+      reset()
       router.refresh()
     } catch (error) {
       console.error(`Failed to ${mode} task:`, error)
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
-  // Determine text based on mode
-  const dialogTitle = mode === "create" ? "Create New Task" : "Update Task"
-  const buttonText = isSubmitting
-    ? mode === "create"
-      ? "Creating..."
-      : "Updating..."
-    : mode === "create"
-      ? "Create Task"
-      : "Update Task"
-
-  // Default trigger based on mode
-  const defaultTrigger =
-    mode === "create" ? <Button className="mb-4">Create Task</Button> : <Button size="sm">Edit</Button>
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
+    <Dialog>
+      <DialogTrigger asChild>{trigger || <Button size={mode === "create" ? "default" : "sm"}>{mode === "create" ? "Create Task" : "Edit"}</Button>}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogTitle>{mode === "create" ? "Create New Task" : "Update Task"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
             <Label htmlFor="title">Task Title</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter task title"
-              required
-            />
+            <Input id="title" {...register("title", { required: "Task title is required" })} placeholder="Enter task title" />
           </div>
           <div className="flex items-center justify-between">
-            <Label htmlFor="completed">Status</Label>
+            <Label>Status</Label>
             <div className="flex items-center space-x-2">
-              <Label htmlFor="completed">{completed ? "Completed" : "Pending"}</Label>
-              <Switch id="completed" checked={completed} onCheckedChange={setCompleted} />
+              <Label>{completed ? "Completed" : "Pending"}</Label>
+              <Switch checked={completed} onCheckedChange={(value) => setValue("completed", value)} />
             </div>
           </div>
-          <Button type="submit" className="w-full" disabled={isSubmitting || !title.trim()}>
-            {buttonText}
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? (mode === "create" ? "Creating..." : "Updating...") : mode === "create" ? "Create Task" : "Update Task"}
           </Button>
         </form>
       </DialogContent>
     </Dialog>
   )
 }
-
