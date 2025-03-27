@@ -5,6 +5,7 @@ import { Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import pb from "@/lib/pocketbase"
 import { TaskDialog } from "@/components/create-update"
+import { DeleteTaskDialog } from "@/components/delete"
 
 export default async function TasksPage() {
   const records = await pb.collection("Tasks").getFullList({
@@ -44,6 +45,7 @@ export default async function TasksPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
+                  <div className="flex items-center gap-2">
                     <TaskDialog
                       mode="update"
                       task={{
@@ -57,6 +59,13 @@ export default async function TasksPage() {
                         </Button>
                       }
                     />
+                    <DeleteTaskDialog
+                        task={{
+                          id: task.id,
+                          title: task.title,
+                        }}
+                      />
+                      </div>
                   </TableCell>
                 </TableRow>
               ))}
