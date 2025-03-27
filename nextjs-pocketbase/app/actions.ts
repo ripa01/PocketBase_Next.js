@@ -17,10 +17,10 @@ export async function changePage(formData: FormData) {
     newPage = Math.min(totalPages, page + 1)
   }
 
-  redirect(`/?page=${newPage}&perPage=${currentPerPage}`)
+  redirect(`/page=${newPage}&perPage=${currentPerPage}`)
 }
 
 export async function changePerPage(formData: FormData) {
   const perPage = formData.get('perPage')
-  redirect(`/?page=1&perPage=${perPage}`)
+  redirect(`/page=1&perPage=${perPage}`)
 }

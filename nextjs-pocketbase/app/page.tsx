@@ -9,14 +9,15 @@ import { fetchTasks } from "@/lib/pagination"
 import { changePage } from "./actions"
 import { PerPageSelect } from "@/components/perPage"
 
-export default async function TasksPage({
-  searchParams,
-}: {
-  searchParams?: {
-    page?: string
-    perPage?: string
+export default async function TasksPage(
+  props: {
+    searchParams?: Promise<{
+      page?: string
+      perPage?: string
+    }>
   }
-}) {
+) {
+  const searchParams = await props.searchParams;
   const page = Number(searchParams?.page) || 1
   const perPage = Number(searchParams?.perPage) || 5
 
